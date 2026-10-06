@@ -1,0 +1,30 @@
+name: build-windows
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyinstaller
+      - run: python test_app.py
+      - run: pyinstaller --onefile --windowed --name YTDownloader app.py
+      - name: Fetch yt-dlp / ffmpeg / deno into dist/bin
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory dist/bin | Out-Null
+          Invoke-WebRequest https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -OutFile dist/bin/yt-dlp.exe
+          Invoke-WebRequest https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip ffmpeg
+          Copy-Item ffmpeg/*/bin/ffmpeg.exe, ffmpeg/*/bin/ffprobe.exe dist/bin/
+          Invoke-WebRequest https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip -OutFile deno.zip
+          Expand-Archive deno.zip dist/bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YTDownloader-windows
+          path: dist/
