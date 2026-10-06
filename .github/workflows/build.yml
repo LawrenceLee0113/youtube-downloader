@@ -3,6 +3,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write  # 建立 Release 需要
+
 jobs:
   build:
     runs-on: windows-latest
@@ -28,3 +31,11 @@ jobs:
         with:
           name: YTDownloader-windows
           path: dist/
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive dist/* YTDownloader-windows.zip
+      # ponytail: 只有推 v* 標籤才發 Release，一般 push 只產生 artifact
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: YTDownloader-windows.zip
